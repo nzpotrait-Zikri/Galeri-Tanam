@@ -1,0 +1,398 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+<title>Zikponik — Galeri Progres Tanam</title>
+<meta name="description" content="Upload foto kebun, hari ke berapa otomatis kehitung. Zikponik." />
+<link rel="icon" href="data:,">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+  :root{
+    --bg:#F3F6EE; --card:#FFFFFF; --text:#16211C; --muted:#5B6B60;
+    --deep:#16342E; --leaf:#4E7A46; --a:#2D6E7E; --b:#B87A2E;
+    --late:#A23B3B; --border:#DCE3D8;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select{font-family:inherit;}
+
+  .page{min-height:100vh;padding:28px 16px 64px;}
+  .wrap{max-width:720px;margin:0 auto;}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--leaf);font-weight:600;margin-bottom:8px;}
+  .title{font-family:'Fraunces',serif;font-size:30px;font-weight:600;color:var(--deep);margin:0 0 8px;line-height:1.15;}
+  .subtitle{font-size:14px;color:var(--muted);line-height:1.5;margin:0 0 22px;}
+
+  .batch-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .batch-chip{border:1.5px solid var(--border);background:var(--card);color:var(--text);border-radius:20px;padding:8px 14px;font-size:13px;font-weight:600;}
+  .batch-chip.active{background:var(--deep);border-color:var(--deep);color:#fff;}
+  .add-batch-chip{border:1.5px dashed var(--leaf);background:transparent;color:var(--leaf);border-radius:20px;padding:8px 14px;font-size:13px;font-weight:700;}
+
+  .card{background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:14px;}
+  .field-label{font-size:11.5px;font-weight:600;color:var(--muted);margin-bottom:4px;margin-top:8px;}
+  .field-row{display:flex;gap:10px;}
+  .field-row > div{flex:1;}
+  .text-input,.select-input{width:100%;border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-size:14px;outline:none;color:var(--text);background:#fff;}
+  .file-input{width:100%;font-size:13px;margin:4px 0;}
+  .primary-btn{margin-top:14px;background:var(--deep);color:#fff;border:none;border-radius:10px;padding:10px 18px;font-size:13.5px;font-weight:700;}
+  .primary-btn:disabled{opacity:.6;}
+  .error-box{background:#FBEAEA;border:1.5px solid var(--late);color:var(--late);border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:14px;}
+  .empty-state{background:var(--card);border:1.5px dashed var(--border);border-radius:14px;padding:24px;text-align:center;color:var(--muted);font-size:13.5px;line-height:1.6;}
+
+  .batch-info-card{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1.5px solid var(--border);border-radius:14px;padding:14px 16px;margin-bottom:14px;gap:10px;}
+  .batch-info-name{font-size:16px;font-weight:700;color:var(--deep);}
+  .batch-info-meta{font-size:12.5px;color:var(--muted);margin-top:3px;}
+  .delete-batch-btn{border:1.5px solid var(--border);background:transparent;color:var(--muted);border-radius:8px;padding:7px 12px;font-size:12px;flex-shrink:0;}
+
+  .step-label{font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:600;margin-bottom:10px;text-transform:uppercase;}
+
+  .gallery{display:grid;grid-template-columns:repeat(auto-fill, minmax(140px, 1fr));gap:12px;}
+  .photo-card{background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:0;overflow:hidden;text-align:left;width:100%;}
+  .photo-thumb-wrap{position:relative;width:100%;aspect-ratio:1/1;background:#EEF1EC;}
+  .photo-thumb{width:100%;height:100%;object-fit:cover;display:block;}
+  .day-badge{position:absolute;top:6px;left:6px;background:rgba(22,52,46,0.85);color:#fff;font-size:10.5px;font-weight:700;padding:3px 7px;border-radius:8px;font-family:'IBM Plex Mono',monospace;}
+  .photo-meta{padding:8px 10px;}
+  .photo-date{font-size:12px;font-weight:700;color:var(--deep);}
+  .photo-note{font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4;}
+
+  .lightbox-overlay{position:fixed;inset:0;background:rgba(22,33,28,0.85);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50;}
+  .lightbox-card{background:#fff;border-radius:16px;overflow:hidden;max-width:480px;width:100%;max-height:90vh;display:flex;flex-direction:column;}
+  .lightbox-img{width:100%;max-height:60vh;object-fit:contain;background:#000;}
+  .lightbox-meta{padding:16px;display:flex;justify-content:space-between;align-items:flex-end;gap:10px;}
+  .lightbox-date{font-size:13.5px;font-weight:700;color:var(--deep);}
+  .lightbox-note{font-size:12.5px;color:var(--muted);margin-top:4px;}
+  .lightbox-actions{display:flex;gap:8px;flex-shrink:0;}
+  .delete-photo-btn{border:1.5px solid var(--late);background:transparent;color:var(--late);border-radius:8px;padding:7px 12px;font-size:12px;font-weight:600;}
+  .close-btn{border:none;background:var(--deep);color:#fff;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;}
+
+  .storage-note{font-size:11px;color:var(--muted);text-align:center;margin-top:20px;line-height:1.5;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+const PLANT_TYPES = ["Selada","Pakcoy","Kangkung","Bayam","Kemangi","Sawi","Seledri","Lainnya"];
+const BATCHES_KEY = "zikponik_batches";
+const photosIndexKey = (batchId) => `zikponik_photos_index_${batchId}`;
+const photoImgKey = (batchId, photoId) => `zikponik_photo_img_${batchId}_${photoId}`;
+
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function formatTanggal(iso){
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("id-ID", { day:"numeric", month:"short", year:"numeric" });
+}
+function hariKe(semaiIso, tanggalIso){
+  const a = new Date(semaiIso + "T00:00:00");
+  const b = new Date(tanggalIso + "T00:00:00");
+  return Math.round((b-a)/86400000) + 1;
+}
+
+function getJSON(key, fallback){
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : fallback;
+  } catch(e){ return fallback; }
+}
+function setJSON(key, value){
+  localStorage.setItem(key, JSON.stringify(value));
+}
+
+function compressImage(file, maxDim=900, quality=0.68){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Gagal membaca file"));
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = () => reject(new Error("Gagal memuat gambar"));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > height && width > maxDim) { height = Math.round(height*maxDim/width); width = maxDim; }
+        else if (height >= width && height > maxDim) { width = Math.round(width*maxDim/height); height = maxDim; }
+        const canvas = document.createElement("canvas");
+        canvas.width = width; canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0,0,width,height);
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+let state = {
+  batches: getJSON(BATCHES_KEY, []),
+  selectedId: null,
+  photos: [],
+  uploadDate: todayStr(),
+  uploadNote: "",
+  showNewBatch: false,
+  newBatch: { nama:"", jenis: PLANT_TYPES[0], tanggalSemai: todayStr() },
+  error: "",
+  lightboxId: null,
+};
+if (state.batches.length > 0) state.selectedId = state.batches[0].id;
+
+const app = document.getElementById("app");
+
+function loadPhotos(batchId){
+  const list = getJSON(photosIndexKey(batchId), []);
+  list.sort((a,b) => a.tanggal < b.tanggal ? 1 : -1);
+  state.photos = list;
+}
+if (state.selectedId) loadPhotos(state.selectedId);
+
+function selectedBatch(){ return state.batches.find(b => b.id === state.selectedId); }
+
+function render(){
+  app.innerHTML = "";
+  const page = document.createElement("div");
+  page.className = "page";
+  const wrap = document.createElement("div");
+  wrap.className = "wrap";
+
+  wrap.innerHTML = `
+    <div class="eyebrow">ZIKPONIK &middot; GALERI PROGRES TANAM</div>
+    <h1 class="title">Galeri Progres Tanam</h1>
+    <p class="subtitle">Nggak perlu ingat-ingat tanggal — upload foto tiap kali cek kebun, hari ke berapa otomatis kehitung.</p>
+  `;
+
+  // Batch selector row
+  const batchRow = document.createElement("div");
+  batchRow.className = "batch-row";
+  state.batches.forEach(b => {
+    const chip = document.createElement("button");
+    chip.className = "batch-chip" + (state.selectedId === b.id ? " active" : "");
+    chip.textContent = b.nama;
+    chip.addEventListener("click", () => { state.selectedId = b.id; loadPhotos(b.id); state.error=""; render(); });
+    batchRow.appendChild(chip);
+  });
+  const addChip = document.createElement("button");
+  addChip.className = "add-batch-chip";
+  addChip.textContent = "+ Batch Baru";
+  addChip.addEventListener("click", () => { state.showNewBatch = !state.showNewBatch; render(); });
+  batchRow.appendChild(addChip);
+  wrap.appendChild(batchRow);
+
+  // New batch form
+  if (state.showNewBatch) {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <div class="field-label">Nama Batch</div>
+      <input class="text-input" id="nb-nama" placeholder="Misal: Selada Talang 1" value="${state.newBatch.nama}" />
+      <div class="field-row">
+        <div>
+          <div class="field-label">Jenis Tanaman</div>
+          <select class="select-input" id="nb-jenis">
+            ${PLANT_TYPES.map(t => `<option value="${t}" ${t===state.newBatch.jenis?"selected":""}>${t}</option>`).join("")}
+          </select>
+        </div>
+        <div>
+          <div class="field-label">Tanggal Semai</div>
+          <input type="date" class="text-input" id="nb-tanggal" value="${state.newBatch.tanggalSemai}" />
+        </div>
+      </div>
+      <button class="primary-btn" id="nb-save">Simpan Batch</button>
+    `;
+    wrap.appendChild(card);
+    card.querySelector("#nb-nama").addEventListener("input", e => state.newBatch.nama = e.target.value);
+    card.querySelector("#nb-jenis").addEventListener("change", e => state.newBatch.jenis = e.target.value);
+    card.querySelector("#nb-tanggal").addEventListener("change", e => state.newBatch.tanggalSemai = e.target.value);
+    card.querySelector("#nb-save").addEventListener("click", () => {
+      if (!state.newBatch.nama.trim()) {
+        state.error = "Kasih nama batch dulu, misal 'Selada Talang 1'.";
+        render();
+        return;
+      }
+      const batch = { id: uid(), nama: state.newBatch.nama.trim(), jenis: state.newBatch.jenis,
+                       tanggalSemai: state.newBatch.tanggalSemai, createdAt: Date.now() };
+      state.batches = [batch, ...state.batches];
+      setJSON(BATCHES_KEY, state.batches);
+      state.selectedId = batch.id;
+      loadPhotos(batch.id);
+      state.showNewBatch = false;
+      state.newBatch = { nama:"", jenis: PLANT_TYPES[0], tanggalSemai: todayStr() };
+      state.error = "";
+      render();
+    });
+  }
+
+  if (state.error) {
+    const err = document.createElement("div");
+    err.className = "error-box";
+    err.textContent = state.error;
+    wrap.appendChild(err);
+  }
+
+  const batch = selectedBatch();
+
+  if (!batch && state.batches.length === 0 && !state.showNewBatch) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.innerHTML = `Belum ada batch tanam. Klik <b>+ Batch Baru</b> di atas untuk mulai &mdash; misal "Selada Talang 1".`;
+    wrap.appendChild(empty);
+  }
+
+  if (batch) {
+    // Batch info
+    const info = document.createElement("div");
+    info.className = "batch-info-card";
+    info.innerHTML = `
+      <div>
+        <div class="batch-info-name">${batch.nama}</div>
+        <div class="batch-info-meta">${batch.jenis} &middot; Semai ${formatTanggal(batch.tanggalSemai)} &middot; Hari ke-${hariKe(batch.tanggalSemai, todayStr())}</div>
+      </div>
+      <button class="delete-batch-btn" id="del-batch">Hapus Batch</button>
+    `;
+    wrap.appendChild(info);
+    info.querySelector("#del-batch").addEventListener("click", () => {
+      if (!confirm("Hapus batch ini beserta semua fotonya? Tidak bisa dibatalkan.")) return;
+      state.photos.forEach(p => localStorage.removeItem(photoImgKey(batch.id, p.id)));
+      localStorage.removeItem(photosIndexKey(batch.id));
+      state.batches = state.batches.filter(b => b.id !== batch.id);
+      setJSON(BATCHES_KEY, state.batches);
+      state.selectedId = state.batches.length > 0 ? state.batches[0].id : null;
+      state.photos = state.selectedId ? getJSON(photosIndexKey(state.selectedId), []) : [];
+      render();
+    });
+
+    // Upload form
+    const uploadCard = document.createElement("div");
+    uploadCard.className = "card";
+    uploadCard.innerHTML = `
+      <div class="step-label">Upload Foto Baru</div>
+      <input type="file" accept="image/*" class="file-input" id="file-input" />
+      <div class="field-row">
+        <div>
+          <div class="field-label">Tanggal Foto</div>
+          <input type="date" class="text-input" id="up-tanggal" value="${state.uploadDate}" />
+        </div>
+        <div style="flex:1.4">
+          <div class="field-label">Catatan (opsional)</div>
+          <input class="text-input" id="up-catatan" placeholder="Misal: daun mulai lebar" value="${state.uploadNote}" />
+        </div>
+      </div>
+      <button class="primary-btn" id="up-save">Simpan Foto</button>
+    `;
+    wrap.appendChild(uploadCard);
+    uploadCard.querySelector("#up-tanggal").addEventListener("change", e => state.uploadDate = e.target.value);
+    uploadCard.querySelector("#up-catatan").addEventListener("input", e => state.uploadNote = e.target.value);
+    uploadCard.querySelector("#up-save").addEventListener("click", async () => {
+      const fileInput = uploadCard.querySelector("#file-input");
+      const file = fileInput.files[0];
+      if (!file) { state.error = "Pilih foto dulu ya."; render(); return; }
+      const btn = uploadCard.querySelector("#up-save");
+      btn.disabled = true; btn.textContent = "Menyimpan...";
+      try {
+        const compressed = await compressImage(file);
+        const photo = { id: uid(), tanggal: state.uploadDate, catatan: state.uploadNote.trim(), createdAt: Date.now() };
+        localStorage.setItem(photoImgKey(batch.id, photo.id), compressed);
+        const newIndex = [photo, ...state.photos];
+        setJSON(photosIndexKey(batch.id), newIndex);
+        newIndex.sort((a,b) => a.tanggal < b.tanggal ? 1 : -1);
+        state.photos = newIndex;
+        state.uploadNote = "";
+        state.error = "";
+      } catch(e) {
+        if (e && e.name === "QuotaExceededError") {
+          state.error = "Penyimpanan penuh. Hapus beberapa foto lama dulu sebelum upload lagi.";
+        } else {
+          state.error = "Gagal menyimpan foto. Coba foto lain atau ukuran lebih kecil.";
+        }
+      }
+      render();
+    });
+
+    // Gallery
+    const galleryLabel = document.createElement("div");
+    galleryLabel.className = "step-label";
+    galleryLabel.textContent = `Riwayat Foto (${state.photos.length})`;
+    wrap.appendChild(galleryLabel);
+
+    if (state.photos.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.textContent = "Belum ada foto di batch ini. Upload foto pertamamu di atas.";
+      wrap.appendChild(empty);
+    } else {
+      const gallery = document.createElement("div");
+      gallery.className = "gallery";
+      state.photos.forEach(p => {
+        const img = localStorage.getItem(photoImgKey(batch.id, p.id));
+        const card = document.createElement("button");
+        card.className = "photo-card";
+        card.innerHTML = `
+          <div class="photo-thumb-wrap">
+            ${img ? `<img src="${img}" class="photo-thumb" />` : ""}
+            <div class="day-badge">Hari ${hariKe(batch.tanggalSemai, p.tanggal)}</div>
+          </div>
+          <div class="photo-meta">
+            <div class="photo-date">${formatTanggal(p.tanggal)}</div>
+            ${p.catatan ? `<div class="photo-note">${p.catatan}</div>` : ""}
+          </div>
+        `;
+        card.addEventListener("click", () => { state.lightboxId = p.id; render(); });
+        gallery.appendChild(card);
+      });
+      wrap.appendChild(gallery);
+    }
+  }
+
+  const storageNote = document.createElement("div");
+  storageNote.className = "storage-note";
+  storageNote.textContent = "Foto tersimpan di browser HP/laptop ini saja. Kalau ganti HP atau hapus data browser, foto ikut hilang — jadi sebaiknya tetap simpan foto aslinya di galeri HP juga.";
+  wrap.appendChild(storageNote);
+
+  page.appendChild(wrap);
+  app.appendChild(page);
+
+  // Lightbox
+  if (state.lightboxId && batch) {
+    const p = state.photos.find(x => x.id === state.lightboxId);
+    if (p) {
+      const img = localStorage.getItem(photoImgKey(batch.id, p.id));
+      const overlay = document.createElement("div");
+      overlay.className = "lightbox-overlay";
+      overlay.addEventListener("click", () => { state.lightboxId = null; render(); });
+      const card = document.createElement("div");
+      card.className = "lightbox-card";
+      card.addEventListener("click", e => e.stopPropagation());
+      card.innerHTML = `
+        ${img ? `<img src="${img}" class="lightbox-img" />` : ""}
+        <div class="lightbox-meta">
+          <div>
+            <div class="lightbox-date">${formatTanggal(p.tanggal)} &middot; Hari ${hariKe(batch.tanggalSemai, p.tanggal)}</div>
+            ${p.catatan ? `<div class="lightbox-note">${p.catatan}</div>` : ""}
+          </div>
+          <div class="lightbox-actions">
+            <button class="delete-photo-btn" id="lb-delete">Hapus</button>
+            <button class="close-btn" id="lb-close">Tutup</button>
+          </div>
+        </div>
+      `;
+      overlay.appendChild(card);
+      app.appendChild(overlay);
+      card.querySelector("#lb-close").addEventListener("click", () => { state.lightboxId = null; render(); });
+      card.querySelector("#lb-delete").addEventListener("click", () => {
+        if (!confirm("Hapus foto ini?")) return;
+        localStorage.removeItem(photoImgKey(batch.id, p.id));
+        state.photos = state.photos.filter(x => x.id !== p.id);
+        setJSON(photosIndexKey(batch.id), state.photos);
+        state.lightboxId = null;
+        render();
+      });
+    }
+  }
+}
+
+render();
+</script>
+</body>
+</html>
